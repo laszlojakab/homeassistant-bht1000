@@ -1,0 +1,21 @@
+{
+    "config": {
+        "title": "BHT-1000 WiFi Thermostat",
+        "step": {
+            "user": {
+                "data": {
+                    "host": "Host",
+                    "name": "Device name"
+                },
+                "description": "Controlling and monitoring BHT-1000 thermostat.",
+                "title": "Configure BHT-1000 WiFi Thermostat"
+            }
+        },
+        "error": {
+            "invalid_host": "Invalid host."
+        },
+        "abort": {
+            "already_configured": "These device already registered."
+        }
+    }
+}

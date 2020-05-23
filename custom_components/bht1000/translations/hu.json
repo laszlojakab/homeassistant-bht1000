@@ -1,0 +1,21 @@
+{
+    "config": {
+        "title": "BHT-1000 WiFi termosztát",
+        "step": {
+            "user": {
+                "data": {
+                    "host": "Host",
+                    "name": "Eszköz neve"
+                },
+                "description": "BHT-1000 termosztát vezérlése.",
+                "title": "BHT-1000 WiFi termosztát beállítása"
+            }
+        },
+        "error": {
+            "invalid_host": "Hibás host."
+        },
+        "abort": {
+            "already_configured": "Az eszköz már regisztrálva van."
+        }
+    }
+}

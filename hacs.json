@@ -1,0 +1,4 @@
+{
+  "name": "Beca Energy BHT-1000 thermostat integration",
+  "iot_class": "Local Polling"
+}

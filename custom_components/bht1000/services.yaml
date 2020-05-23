@@ -1,0 +1,11 @@
+sync_time:
+  # Description of the service
+  description: Synchronize time with server.
+  # Different fields that your service accepts
+  fields:
+    # Key of the field
+    entity_id:
+      # Description of the field
+      description: Name(s) of the entities to sync.
+      # Example value that can be passed for this field
+      example: "climate.living_room"

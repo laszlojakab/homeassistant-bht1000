@@ -1,0 +1,10 @@
+{
+  "domain": "bht1000",
+  "name": "BHT-1000 Wifi thermostat",
+  "documentation": "",
+  "dependencies": [],
+  "config_flow": true,
+  "codeowners": [
+    "@laszlojakab"
+  ]
+}
