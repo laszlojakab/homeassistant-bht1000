@@ -15,7 +15,7 @@ class BHT1000ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
             try:
                 bht1000 = BHT1000(info[CONF_HOST], PORT)
-                if (not bht1000.checkHost()):                
+                if (not bht1000.check_host()):                
                     return await self._show_form(
                         errors = {CONF_HOST: "invalid_host"}
                     )
