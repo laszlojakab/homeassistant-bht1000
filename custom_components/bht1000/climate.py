@@ -1,4 +1,5 @@
 import logging
+
 from .const import (
     DOMAIN,
     CONTROLLER
@@ -27,19 +28,20 @@ from homeassistant.components.climate.const import (
 )
 
 from homeassistant.helpers import (
-    config_validation as cv, 
-    entity_platform, 
+    config_validation as cv,
+    entity_platform,
     service
 )
 
 from datetime import datetime
 import voluptuous as vol
 
-from .const import ( SERVICE_SYNC_TIME )
+from .const import (SERVICE_SYNC_TIME)
 
-from .bht1000 import ( STATE_OFF, STATE_ON, WEEKLY_MODE )
+from .bht1000 import (STATE_OFF, STATE_ON, WEEKLY_MODE)
 
 _LOGGER = logging.getLogger(__name__)
+
 
 class Bht1000Device(ClimateEntity):
     def __init__(self, controller, name):
@@ -49,7 +51,7 @@ class Bht1000Device(ClimateEntity):
     @property
     def name(self):
         return self._name
- 
+
     @property
     def unique_id(self):
         return self._name
@@ -84,8 +86,8 @@ class Bht1000Device(ClimateEntity):
 
         if (self._controller.idle is True):
             return CURRENT_HVAC_IDLE
-        
-        return CURRENT_HVAC_HEAT            
+
+        return CURRENT_HVAC_HEAT
 
     @property
     def hvac_modes(self):
@@ -105,7 +107,7 @@ class Bht1000Device(ClimateEntity):
 
     @property
     def target_temperature(self):
-        return self._controller.setpoint  
+        return self._controller.setpoint
 
     @property
     def precision(self):
@@ -113,11 +115,11 @@ class Bht1000Device(ClimateEntity):
 
     @property
     def max_temp(self):
-        return 35        
-    
+        return 35
+
     @property
     def min_temp(self):
-        return 0        
+        return 0
 
     def set_hvac_mode(self, mode):
         if mode == HVAC_MODE_HEAT:
@@ -152,7 +154,7 @@ class Bht1000Device(ClimateEntity):
     def unlock(self):
         self._controller.unlock()
         return
-    
+
     def sync_time(self):
         self._controller.set_time(datetime.now(tz=None))
 
@@ -167,7 +169,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
     platform = entity_platform.current_platform.get()
 
     platform.async_register_entity_service(
-        SERVICE_SYNC_TIME, 
+        SERVICE_SYNC_TIME,
         {},
         SERVICE_SYNC_TIME
     )
@@ -175,5 +177,3 @@ async def async_setup_entry(hass, entry, async_add_entities):
     async_add_entities([Bht1000Device(controller, name)])
 
     _LOGGER.info("Setting up BHT1000 platform completed.")
-
-  
