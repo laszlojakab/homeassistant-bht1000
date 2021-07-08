@@ -44,16 +44,16 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class Bht1000Device(ClimateEntity):
-    def __init__(self, controller, name):
+    def __init__(self, controller, name: str):
         self._controller = controller
         self._name = name
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self._name
 
     @property
-    def unique_id(self):
+    def unique_id(self) -> str:
         return self._name
 
     @property
@@ -66,7 +66,7 @@ class Bht1000Device(ClimateEntity):
         }
 
     @property
-    def hvac_mode(self):
+    def hvac_mode(self) -> str:
         if (self._controller.power == STATE_OFF):
             return HVAC_MODE_OFF
 
@@ -76,7 +76,7 @@ class Bht1000Device(ClimateEntity):
         return HVAC_MODE_HEAT
 
     @property
-    def hvac_action(self):
+    def hvac_action(self) -> str:
         # The current operation (e.g. heat, cool, idle). Used to determine state.
         if (self._controller.power == STATE_OFF):
             return CURRENT_HVAC_OFF
@@ -121,7 +121,7 @@ class Bht1000Device(ClimateEntity):
     def min_temp(self):
         return 0
 
-    def set_hvac_mode(self, mode):
+    def set_hvac_mode(self, mode: str):
         if mode == HVAC_MODE_HEAT:
             self._controller.turn_on()
             self._controller.set_manual_mode()
@@ -160,6 +160,7 @@ class Bht1000Device(ClimateEntity):
 
     async def async_update(self):
         self._controller.read_status()
+
 
 async def async_setup_entry(hass, entry, async_add_entities):
     _LOGGER.info("Setting up BHT1000 platform.")
