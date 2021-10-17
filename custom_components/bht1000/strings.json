@@ -5,7 +5,8 @@
             "user": {
                 "data": {
                     "host": "Host",
-                    "name": "Device name"
+                    "name": "Device name",
+                    "mac": "MAC address"
                 },
                 "description": "Controlling and monitoring BHT-1000 thermostat.",
                 "title": "Configure BHT-1000 WiFi Thermostat"

@@ -12,6 +12,7 @@ from homeassistant.components.climate import (
 from homeassistant.const import (
     CONF_HOST,
     CONF_NAME,
+    CONF_MAC,
     TEMP_CELSIUS,
     ATTR_TEMPERATURE
 )
@@ -27,7 +28,8 @@ from homeassistant.components.climate.const import (
 )
 
 from homeassistant.helpers import (
-    entity_platform
+    entity_platform,
+    device_registry
 )
 
 from datetime import datetime
@@ -40,9 +42,10 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class Bht1000Device(ClimateEntity):
-    def __init__(self, controller, name: str):
+    def __init__(self, controller, name: str, mac_address: str = None):
         self._controller = controller
         self._name = name
+        self._mac_address = mac_address
 
     @property
     def name(self) -> str:
@@ -54,12 +57,17 @@ class Bht1000Device(ClimateEntity):
 
     @property
     def device_info(self):
-        return {
+        device_info = {
             "identifiers": {(DOMAIN, self.unique_id)},
             "name": self._name,
             "manufacturer": "Beca Energy",
             "model": "BHT 1000"
         }
+        
+        if (self._mac_address):
+            device_info["connections"] = {(device_registry.CONNECTION_NETWORK_MAC, self._mac_address)}
+
+        return device_info
 
     @property
     def hvac_mode(self) -> str:
@@ -162,6 +170,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
     _LOGGER.info("Setting up BHT1000 platform.")
     controller = hass.data[DOMAIN][CONTROLLER][entry.data[CONF_HOST]]
     name = entry.data[CONF_NAME]
+    mac_address = entry.data[CONF_MAC] if CONF_MAC in entry.data else None
 
     platform = entity_platform.current_platform.get()
 
@@ -183,6 +192,6 @@ async def async_setup_entry(hass, entry, async_add_entities):
         UNLOCK
     )
         
-    async_add_entities([Bht1000Device(controller, name)])
+    async_add_entities([Bht1000Device(controller, name, mac_address)])
 
     _LOGGER.info("Setting up BHT1000 platform completed.")

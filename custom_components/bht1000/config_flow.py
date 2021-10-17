@@ -1,6 +1,6 @@
 import voluptuous as vol 
 from homeassistant import config_entries
-from homeassistant.const import (CONF_HOST, CONF_NAME)
+from homeassistant.const import (CONF_HOST, CONF_NAME, CONF_MAC)
 from .const import (DOMAIN, PORT)
 from .bht1000 import BHT1000
 import logging
@@ -29,14 +29,15 @@ class BHT1000ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 errors["host"] = "invalid_host"            
 
             if (valid):
-                data = { CONF_NAME: info[CONF_NAME], CONF_HOST: info[CONF_HOST] }
+                data = { CONF_NAME: info[CONF_NAME], CONF_HOST: info[CONF_HOST], CONF_MAC: info[CONF_MAC] if CONF_MAC in info else None }
                 return self.async_create_entry(title=f"BHT-1000 WiFi Thermostat ({info[CONF_NAME]})", data=data)
  
         return self.async_show_form(
             step_id="user", 
             data_schema=vol.Schema({
                 vol.Required(CONF_HOST): str,
-                vol.Required(CONF_NAME): str
+                vol.Required(CONF_NAME): str,
+                vol.Optional(CONF_MAC): str
             }),
             errors = errors
         )
