@@ -124,6 +124,16 @@ class SetAllDataCommandPayload(OutgoingPayload):
         super().__init__(0xA1, data0, calibration + 256 if (calibration < 0) else calibration, int(setpoint * 2.0), data3)
         return 
 
+class UnLockCommandPayload(OutgoingPayload):
+    def __init__(self):
+        super().__init__(0xA4, 0, 1, 1, 1)
+        return
+
+class LockCommandPayload(OutgoingPayload):
+    def __init__(self):
+        super().__init__(0xA4, 1, 1, 1, 1)
+        return
+
 class SetTimeCommandPayload(OutgoingPayload):
     def __init__(self, time):
         super().__init__(0xA8, time.second, time.minute, time.hour, time.weekday() + 1)
@@ -182,14 +192,12 @@ class BHT1000():
     def lock(self):
         if (self.__is_data_valid()):
             _LOGGER.debug("lock (%s:%s)", self._host, self._port)
-            self.__sendCommand(SetAllDataCommandPayload(
-                self._mode, self._power, STATE_ON, self._calibration, self._setpoint))
+            self.__sendCommand(LockCommandPayload())
 
     def unlock(self):
         if (self.__is_data_valid()):
             _LOGGER.debug("unlock (%s:%s)", self._host, self._port)
-            self.__sendCommand(SetAllDataCommandPayload(
-                self._mode, self._power, STATE_OFF, self._calibration, self._setpoint))
+            self.__sendCommand(UnLockCommandPayload())
 
     def set_manual_mode(self):
         if (self.__is_data_valid()):
@@ -239,8 +247,10 @@ class BHT1000():
                 sock.settimeout(10)
                 sock.connect((self._host, self._port))
                 bytesToSend = command.getBytesHex()
+                _LOGGER.debug("bytes to send (%s:%s): %s", self._host, self._port, bytesToSend)
                 sock.send(bytesToSend)
-                bytesReceived = binascii.hexlify(sock.recv(64))
+                bytesReceived = binascii.hexlify(sock.recv(64))                
+                _LOGGER.debug("bytes received (%s:%s): %s", self._host, self._port, bytesReceived)
 
             if (len(bytesReceived) > 3):
                 response = StatusPayload(bytesReceived)

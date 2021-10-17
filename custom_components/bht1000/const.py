@@ -5,3 +5,5 @@ DOMAIN = "bht1000"
 PORT = 8899
 
 SERVICE_SYNC_TIME = "sync_time"
+LOCK = "lock"
+UNLOCK = "unlock"

@@ -36,7 +36,7 @@ from homeassistant.helpers import (
 from datetime import datetime
 import voluptuous as vol
 
-from .const import (SERVICE_SYNC_TIME)
+from .const import (SERVICE_SYNC_TIME, LOCK, UNLOCK)
 
 from .bht1000 import (STATE_OFF, STATE_ON, WEEKLY_MODE)
 
@@ -175,6 +175,18 @@ async def async_setup_entry(hass, entry, async_add_entities):
         SERVICE_SYNC_TIME
     )
 
+    platform.async_register_entity_service(
+        LOCK,
+        {},
+        LOCK
+    )
+    
+    platform.async_register_entity_service(
+        UNLOCK,
+        {},
+        UNLOCK
+    )
+        
     async_add_entities([Bht1000Device(controller, name)])
 
     _LOGGER.info("Setting up BHT1000 platform completed.")
