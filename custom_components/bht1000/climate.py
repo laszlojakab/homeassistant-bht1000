@@ -13,8 +13,7 @@ from homeassistant.const import (
     CONF_HOST,
     CONF_NAME,
     TEMP_CELSIUS,
-    ATTR_TEMPERATURE,
-    STATE_UNKNOWN
+    ATTR_TEMPERATURE
 )
 
 from homeassistant.components.climate.const import (
@@ -28,13 +27,10 @@ from homeassistant.components.climate.const import (
 )
 
 from homeassistant.helpers import (
-    config_validation as cv,
-    entity_platform,
-    service
+    entity_platform
 )
 
 from datetime import datetime
-import voluptuous as vol
 
 from .const import (SERVICE_SYNC_TIME, LOCK, UNLOCK)
 
