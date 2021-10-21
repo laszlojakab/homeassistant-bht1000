@@ -167,55 +167,65 @@ class BHT1000():
         try:
             _LOGGER.debug("read status (%s:%s)", self._host, self._port)
             self.__sendCommand(ReadStatusCommandPayload())
-        except:
-            pass
+            return True
+        except Exception as e:
+            _LOGGER.error(e)
+            return False
         
     def turn_on(self):
         if (self.__is_data_valid()):
             _LOGGER.debug("turn on (%s:%s)", self._host, self._port)
-            self.__sendCommand(SetAllDataCommandPayload(
+            return self.__sendCommand(SetAllDataCommandPayload(
                 self._mode, STATE_ON, self._locked, self._calibration, self._setpoint))
+        return False
 
     def turn_off(self):
         if (self.__is_data_valid()):
             _LOGGER.debug("turn off (%s:%s)", self._host, self._port)
-            self.__sendCommand(SetAllDataCommandPayload(
+            return self.__sendCommand(SetAllDataCommandPayload(
                 self._mode, STATE_OFF, self._locked, self._calibration, self._setpoint))
-
+        return False
+    
     def set_temperature(self, temperature):
         if (self.__is_data_valid()):
             _LOGGER.debug("set temperature to %f (%s:%s)",
                           temperature, self._host, self._port)
-            self.__sendCommand(SetAllDataCommandPayload(
+            return self.__sendCommand(SetAllDataCommandPayload(
                 self._mode, self._power, self._locked, self._calibration, temperature))
-
+        return False
+    
     def lock(self):
         if (self.__is_data_valid()):
             _LOGGER.debug("lock (%s:%s)", self._host, self._port)
-            self.__sendCommand(LockCommandPayload())
-
+            return self.__sendCommand(LockCommandPayload())
+        return False
+    
     def unlock(self):
         if (self.__is_data_valid()):
             _LOGGER.debug("unlock (%s:%s)", self._host, self._port)
-            self.__sendCommand(UnLockCommandPayload())
-
+            return self.__sendCommand(UnLockCommandPayload())
+        return False
+    
     def set_manual_mode(self):
         if (self.__is_data_valid()):
             _LOGGER.debug("set manual mode (%s:%s)", self._host, self._port)
-            self.__sendCommand(SetAllDataCommandPayload(
+            return self.__sendCommand(SetAllDataCommandPayload(
                 MANUAL_MODE, self._power, self._locked, self._calibration, self._setpoint))
+        return False
 
     def set_weekly_mode(self):
         if (self.__is_data_valid()):
             _LOGGER.debug("set weekly mode (%s:%s)", self._host, self._port)
-            self.__sendCommand(SetAllDataCommandPayload(
+            return self.__sendCommand(SetAllDataCommandPayload(
                 WEEKLY_MODE, self._power, self._locked, self._calibration, self._setpoint))
+        return False
 
     def set_time(self, time):
         if (self.__is_data_valid()):
             _LOGGER.debug("set time (%s:%s)", self._host, self._port)
-            self.__sendCommand(SetTimeCommandPayload(time))
-
+            return self.__sendCommand(SetTimeCommandPayload(time))
+        return False
+    
     def __is_data_valid(self):
         result = (self._mode is not None) and (self._power is not None) and (
             self._locked is not None) and (self._calibration is not None) and (self._setpoint is not None)
@@ -273,8 +283,11 @@ class BHT1000():
                                 self._idle = wasIdle
                     else:
                         self._idle = True
-                    return
-        except:
-            pass
-        self._power = STATE_OFF
- 
+                    return True
+                else: 
+                    return False
+            else:
+                return False
+        except Exception as e:
+            _LOGGER.error(e)
+            return False
