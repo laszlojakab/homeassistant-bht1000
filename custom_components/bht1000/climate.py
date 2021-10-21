@@ -14,7 +14,8 @@ from homeassistant.const import (
     CONF_NAME,
     CONF_MAC,
     TEMP_CELSIUS,
-    ATTR_TEMPERATURE
+    ATTR_TEMPERATURE,
+    STATE_UNAVAILABLE
 )
 
 from homeassistant.components.climate.const import (
@@ -36,16 +37,25 @@ from datetime import datetime
 
 from .const import (SERVICE_SYNC_TIME, LOCK, UNLOCK)
 
-from .bht1000 import (STATE_OFF, STATE_ON, WEEKLY_MODE)
+from .bht1000 import (BHT1000, STATE_OFF, STATE_ON, WEEKLY_MODE)
 
 _LOGGER = logging.getLogger(__name__)
 
 
 class Bht1000Device(ClimateEntity):
-    def __init__(self, controller, name: str, mac_address: str = None):
+    def __init__(self, controller: BHT1000, name: str, mac_address: str = None):
         self._controller = controller
         self._name = name
         self._mac_address = mac_address
+        self._attr_hvac_mode = None
+        self._attr_min_temp = 0
+        self._attr_max_temp = 35
+        self._attr_precision = 0.5
+        self._attr_temperature_unit = TEMP_CELSIUS
+        self._attr_hvac_modes = [HVAC_MODE_OFF, HVAC_MODE_HEAT, HVAC_MODE_AUTO]
+        self._attr_supported_features = SUPPORT_TARGET_TEMPERATURE
+        self._attr_current_temperature = None
+        self._attr_hvac_action = None
 
     @property
     def name(self) -> str:
@@ -63,67 +73,13 @@ class Bht1000Device(ClimateEntity):
             "manufacturer": "Beca Energy",
             "model": "BHT 1000"
         }
-        
+
         if (self._mac_address):
-            device_info["connections"] = {(device_registry.CONNECTION_NETWORK_MAC, self._mac_address)}
+            device_info["connections"] = {
+                (device_registry.CONNECTION_NETWORK_MAC, self._mac_address)
+            }
 
         return device_info
-
-    @property
-    def hvac_mode(self) -> str:
-        if (self._controller.power == STATE_OFF):
-            return HVAC_MODE_OFF
-
-        if (self._controller.mode == WEEKLY_MODE):
-            return HVAC_MODE_AUTO
-
-        return HVAC_MODE_HEAT
-
-    @property
-    def hvac_action(self) -> str:
-        # The current operation (e.g. heat, cool, idle). Used to determine state.
-        if (self._controller.power == STATE_OFF):
-            return CURRENT_HVAC_OFF
-
-        if ((self._controller.setpoint is None) or (self._controller.current_temperature is None)):
-            return None
-
-        if (self._controller.idle is True):
-            return CURRENT_HVAC_IDLE
-
-        return CURRENT_HVAC_HEAT
-
-    @property
-    def hvac_modes(self):
-        return [HVAC_MODE_OFF, HVAC_MODE_HEAT, HVAC_MODE_AUTO]
-
-    @property
-    def supported_features(self):
-        return SUPPORT_TARGET_TEMPERATURE
-
-    @property
-    def current_temperature(self):
-        return self._controller.current_temperature
-
-    @property
-    def temperature_unit(self):
-        return TEMP_CELSIUS
-
-    @property
-    def target_temperature(self):
-        return self._controller.setpoint
-
-    @property
-    def precision(self):
-        return 0.5
-
-    @property
-    def max_temp(self):
-        return 35
-
-    @property
-    def min_temp(self):
-        return 0
 
     def set_hvac_mode(self, mode: str):
         if mode == HVAC_MODE_HEAT:
@@ -161,11 +117,32 @@ class Bht1000Device(ClimateEntity):
 
     def sync_time(self):
         self._controller.set_time(datetime.now(tz=None))
-
+        return
+    
     async def async_update(self):
-        self._controller.read_status()
+        if (self._controller.read_status()):
+            if (self._controller.power == STATE_OFF):
+                self._attr_hvac_mode = HVAC_MODE_OFF
 
+            if (self._controller.mode == WEEKLY_MODE):
+                self._attr_hvac_mode = HVAC_MODE_AUTO
 
+            self._attr_hvac_mode = HVAC_MODE_HEAT
+            self._attr_current_temperature = self._controller.current_temperature
+            self._attr_target_temperature = self._controller.setpoint   
+            
+            if (self._controller.power == STATE_OFF):
+                self._attr_hvac_action = CURRENT_HVAC_OFF
+            elif ((self._controller.setpoint is None) or (self._controller.current_temperature is None)):
+                self._attr_hvac_action = None
+            elif (self._controller.idle is True):
+                self._attr_hvac_action = CURRENT_HVAC_IDLE
+            else:
+                self._attr_hvac_action = CURRENT_HVAC_HEAT         
+        else:
+            self._attr_hvac_mode = STATE_UNAVAILABLE
+        return
+    
 async def async_setup_entry(hass, entry, async_add_entities):
     _LOGGER.info("Setting up BHT1000 platform.")
     controller = hass.data[DOMAIN][CONTROLLER][entry.data[CONF_HOST]]
@@ -185,13 +162,13 @@ async def async_setup_entry(hass, entry, async_add_entities):
         {},
         LOCK
     )
-    
+
     platform.async_register_entity_service(
         UNLOCK,
         {},
         UNLOCK
     )
-        
+
     async_add_entities([Bht1000Device(controller, name, mac_address)])
 
     _LOGGER.info("Setting up BHT1000 platform completed.")
