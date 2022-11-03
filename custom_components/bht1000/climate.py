@@ -1,13 +1,8 @@
 import logging
 
-from .const import (
-    DOMAIN,
-    CONTROLLER
-)
+from .const import DOMAIN, CONTROLLER
 
-from homeassistant.components.climate import (
-    ClimateEntity
-)
+from homeassistant.components.climate import ClimateEntity
 
 from homeassistant.const import (
     CONF_HOST,
@@ -15,7 +10,7 @@ from homeassistant.const import (
     CONF_MAC,
     TEMP_CELSIUS,
     ATTR_TEMPERATURE,
-    STATE_UNAVAILABLE
+    STATE_UNAVAILABLE,
 )
 
 from homeassistant.components.climate.const import (
@@ -25,19 +20,16 @@ from homeassistant.components.climate.const import (
     HVAC_MODE_AUTO,
     CURRENT_HVAC_OFF,
     CURRENT_HVAC_IDLE,
-    CURRENT_HVAC_HEAT
+    CURRENT_HVAC_HEAT,
 )
 
-from homeassistant.helpers import (
-    entity_platform,
-    device_registry
-)
+from homeassistant.helpers import entity_platform, device_registry
 
 from datetime import datetime
 
-from .const import (SERVICE_SYNC_TIME, LOCK, UNLOCK)
+from .const import SERVICE_SYNC_TIME, LOCK, UNLOCK
 
-from .bht1000 import (BHT1000, STATE_OFF, STATE_ON, WEEKLY_MODE)
+from .bht1000 import BHT1000, STATE_OFF, STATE_ON, WEEKLY_MODE
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -71,10 +63,10 @@ class Bht1000Device(ClimateEntity):
             "identifiers": {(DOMAIN, self.unique_id)},
             "name": self._name,
             "manufacturer": "Beca Energy",
-            "model": "BHT 1000"
+            "model": "BHT 1000",
         }
 
-        if (self._mac_address):
+        if self._mac_address:
             device_info["connections"] = {
                 (device_registry.CONNECTION_NETWORK_MAC, self._mac_address)
             }
@@ -118,31 +110,34 @@ class Bht1000Device(ClimateEntity):
     def sync_time(self):
         self._controller.set_time(datetime.now(tz=None))
         return
-    
+
     async def async_update(self):
-        if (self._controller.read_status()):
-            if (self._controller.power == STATE_OFF):
+        if self._controller.read_status():
+            if self._controller.power == STATE_OFF:
                 self._attr_hvac_mode = HVAC_MODE_OFF
 
-            if (self._controller.mode == WEEKLY_MODE):
+            if self._controller.mode == WEEKLY_MODE:
                 self._attr_hvac_mode = HVAC_MODE_AUTO
 
             self._attr_hvac_mode = HVAC_MODE_HEAT
             self._attr_current_temperature = self._controller.current_temperature
-            self._attr_target_temperature = self._controller.setpoint   
-            
-            if (self._controller.power == STATE_OFF):
+            self._attr_target_temperature = self._controller.setpoint
+
+            if self._controller.power == STATE_OFF:
                 self._attr_hvac_action = CURRENT_HVAC_OFF
-            elif ((self._controller.setpoint is None) or (self._controller.current_temperature is None)):
+            elif (self._controller.setpoint is None) or (
+                self._controller.current_temperature is None
+            ):
                 self._attr_hvac_action = None
-            elif (self._controller.idle is True):
+            elif self._controller.idle is True:
                 self._attr_hvac_action = CURRENT_HVAC_IDLE
             else:
-                self._attr_hvac_action = CURRENT_HVAC_HEAT         
+                self._attr_hvac_action = CURRENT_HVAC_HEAT
         else:
             self._attr_hvac_mode = STATE_UNAVAILABLE
         return
-    
+
+
 async def async_setup_entry(hass, entry, async_add_entities):
     _LOGGER.info("Setting up BHT1000 platform.")
     controller = hass.data[DOMAIN][CONTROLLER][entry.data[CONF_HOST]]
@@ -151,23 +146,11 @@ async def async_setup_entry(hass, entry, async_add_entities):
 
     platform = entity_platform.current_platform.get()
 
-    platform.async_register_entity_service(
-        SERVICE_SYNC_TIME,
-        {},
-        SERVICE_SYNC_TIME
-    )
+    platform.async_register_entity_service(SERVICE_SYNC_TIME, {}, SERVICE_SYNC_TIME)
 
-    platform.async_register_entity_service(
-        LOCK,
-        {},
-        LOCK
-    )
+    platform.async_register_entity_service(LOCK, {}, LOCK)
 
-    platform.async_register_entity_service(
-        UNLOCK,
-        {},
-        UNLOCK
-    )
+    platform.async_register_entity_service(UNLOCK, {}, UNLOCK)
 
     async_add_entities([Bht1000Device(controller, name, mac_address)])
 
