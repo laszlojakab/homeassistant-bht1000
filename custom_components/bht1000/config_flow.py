@@ -1,3 +1,4 @@
+""" The configuration flow for BHT1000 integration. """
 import logging
 from typing import Any, Dict
 
@@ -14,9 +15,21 @@ _LOGGER = logging.getLogger(__name__)
 
 @config_entries.HANDLERS.register(DOMAIN)
 class BHT1000ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
+    """
+    Configuration flow handler for BHT1000 integration.
+    """
     VERSION = 1
 
     async def async_step_user(self, user_info: Dict[str, Any]) -> FlowResult:
+        """
+        Handles the step when integration added from the UI.
+
+        Args:
+            user_info: The data entered by the user from the UI.
+
+        Returns:
+            The configuration flow result.        
+        """
         errors = {}
         if user_info is not None:
             await self.async_set_unique_id(user_info[CONF_NAME])

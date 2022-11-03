@@ -1,3 +1,4 @@
+""" Module of BHT1000 climate entity. """
 import logging
 from datetime import datetime
 
@@ -31,7 +32,19 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class Bht1000Device(ClimateEntity):
+    """
+    Represents a BHT1000 thermostat climate entity.
+    """
+
     def __init__(self, controller: BHT1000, name: str, mac_address: str = None):
+        """
+        Initialize a new instance of `Bht1000Device` class.
+
+        Args:
+            controller: The `BHT1000` instance which is used to communicate with the thermostat.
+            name: The name of the thermostat
+            mac_address: The MAC address of the thermostat.
+        """
         self._controller = controller
         self._name = name
         self._mac_address = mac_address
@@ -47,14 +60,17 @@ class Bht1000Device(ClimateEntity):
 
     @property
     def name(self) -> str:
+        """Gets the name of the thermostat."""
         return self._name
 
     @property
     def unique_id(self) -> str:
+        """Gets the unique ID of the thermostat."""
         return self._name
 
     @property
     def device_info(self):
+        """Gets the device information of the thermostat."""
         device_info = {
             "identifiers": {(DOMAIN, self.unique_id)},
             "name": self._name,
@@ -70,6 +86,12 @@ class Bht1000Device(ClimateEntity):
         return device_info
 
     def set_hvac_mode(self, mode: str) -> None:
+        """
+        Sets the current HVAC mode.
+
+        Args:
+            mode: The HVAC mode to set.
+        """
         if mode == HVAC_MODE_HEAT:
             self._controller.turn_on()
             self._controller.set_manual_mode()
@@ -83,31 +105,38 @@ class Bht1000Device(ClimateEntity):
         return
 
     def set_temperature(self, **kwargs) -> None:
+        """Sets the target temperature."""
         if kwargs.get(ATTR_TEMPERATURE) is not None:
             self._controller.set_temperature(kwargs.get(ATTR_TEMPERATURE))
         return
 
     def turn_on(self) -> None:
+        """Turns on the thermostat."""
         self._controller.turn_on()
         return
 
     def turn_off(self) -> None:
+        """Turns off the thermostat."""
         self._controller.turn_off()
         return
 
     def lock(self) -> None:
+        """Locks on the thermostat."""
         self._controller.lock()
         return
 
     def unlock(self) -> None:
+        """Unlocks on the thermostat."""
         self._controller.unlock()
         return
 
     def sync_time(self) -> None:
+        """Synchronizes the time on the thermostat."""
         self._controller.set_time(datetime.now(tz=None))
         return
 
     async def async_update(self) -> None:
+        """Updates the state of the climate."""
         if self._controller.read_status():
             if self._controller.power == STATE_OFF:
                 self._attr_hvac_mode = HVAC_MODE_OFF
@@ -139,6 +168,17 @@ async def async_setup_entry(
     config_entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ):
+    """
+    Setup of BHT1000 climate entity for the specified config_entry.
+
+    Args:
+        hass: The Home Assistant instance.
+        config_entry: The config entry which is used to create sensors.
+        async_add_entities: The callback which can be used to add new entities to Home Assistant.
+
+    Returns:
+        The value indicates whether the setup succeeded.
+    """
     _LOGGER.info("Setting up BHT1000 platform.")
     controller = hass.data[DOMAIN][CONTROLLER][config_entry.data[CONF_HOST]]
     name = config_entry.data[CONF_NAME]
