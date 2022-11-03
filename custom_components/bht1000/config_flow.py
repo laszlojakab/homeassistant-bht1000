@@ -1,9 +1,11 @@
+import logging
+
 import voluptuous as vol
 from homeassistant import config_entries
-from homeassistant.const import CONF_HOST, CONF_NAME, CONF_MAC
-from .const import DOMAIN, PORT
+from homeassistant.const import CONF_HOST, CONF_MAC, CONF_NAME
+
 from .bht1000 import BHT1000
-import logging
+from .const import DOMAIN, PORT
 
 _LOGGER = logging.getLogger(__name__)
 

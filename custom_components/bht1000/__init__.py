@@ -1,7 +1,8 @@
 """BHT-1000 thermostat integration."""
-from .const import DOMAIN, CONTROLLER, PORT
 from homeassistant.const import CONF_HOST
+
 from .bht1000 import BHT1000
+from .const import CONTROLLER, DOMAIN, PORT
 
 
 async def async_setup(hass, config):

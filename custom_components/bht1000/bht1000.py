@@ -1,6 +1,6 @@
-import socket
 import binascii
 import logging
+import socket
 
 _LOGGER = logging.getLogger(__name__)
 
