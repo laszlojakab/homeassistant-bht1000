@@ -1,5 +1,6 @@
 """ Module of BHT1000 controller. """
 import binascii
+from dataclasses import dataclass
 import datetime
 import logging
 import socket
@@ -20,76 +21,50 @@ STATE_ON = "on"
 STATE_OFF = "off"
 
 
+@dataclass
+# pylint: disable=too-many-instance-attributes
 class Payload:
-    """Represents the base class of payload to send from or receive from the thermostat."""
+    """
+    Represents the base class of payload to send from or receive from the thermostat.
 
-    def __init__(
-        self,
-        command: int,
-        id0: int,
-        id1: int,
-        data0: int,
-        data1: int,
-        data2: int,
-        data3: int,
-        checksum: int,
-    ):
-        """
-        Initialize a new instance of `Payload` class.
+    Attributes:
+        command: The command field of the payload.
+        id0: The id0 field of the payload.
+        id1: The id1 field of the payload.
+        data0: The data0 field of the payload.
+        data1: The data1 field of the payload.
+        data2: The data2 field of the payload.
+        data3: The data3 field of the payload.
+        checksum: The checksum of the payload.
+    """
 
-        Args:
-            command: The command field of the payload.
-            id0: The id0 field of the payload.
-            id1: The id1 field of the payload.
-            data0: The data0 field of the payload.
-            data1: The data1 field of the payload.
-            data2: The data2 field of the payload.
-            data3: The data3 field of the payload.
-            checksum: The checksum of the payload.
-        """
-        self._command = command
-        self._id0 = id0
-        self._id1 = id1
-        self._data0 = data0
-        self._data1 = data1
-        self._data2 = data2
-        self._data3 = data3
-        self._checksum = checksum
-        return
-
-    def get_command(self) -> int:
-        """Gets the command field of the payload."""
-        return self._command
-
-    def get_id0(self) -> int:
-        """Gets the id0 field of the payload."""
-        return self._id0
-
-    def get_id1(self) -> int:
-        """Gets the id1 field of the payload."""
-        return self._id1
-
-    def get_data0(self) -> int:
-        """Gets the data0 field of the payload."""
-        return self._data0
-
-    def get_data1(self) -> int:
-        """Gets the data1 field of the payload."""
-        return self._data1
-
-    def get_data2(self) -> int:
-        """Gets the data2 field of the payload."""
-        return self._data2
-
-    def get_data3(self) -> int:
-        """Gets the data3 field of the payload."""
-        return self._data3
-
-    def get_checksum(self) -> int:
-        """Gets the checksum of the payload."""
-        return self._checksum
+    # pylint: disable=invalid-name
+    command: Final[int]
+    """The command field of the payload."""
+    # pylint: disable=invalid-name
+    id0: Final[int]
+    """The id0 field of the payload."""
+    # pylint: disable=invalid-name
+    id1: Final[int]
+    """The id1 field of the payload."""
+    # pylint: disable=invalid-name
+    data0: Final[int]
+    """The data0 field of the payload."""
+    # pylint: disable=invalid-name
+    data1: Final[int]
+    """The data1 field of the payload."""
+    # pylint: disable=invalid-name
+    data2: Final[int]
+    """The data2 field of the payload."""
+    # pylint: disable=invalid-name
+    data3: Final[int]
+    """The data3 field of the payload."""
+    # pylint: disable=invalid-name
+    checksum: Final[int]
+    """The checksum of the payload."""
 
 
+# pylint: disable=too-few-public-methods
 class IncomingPayload(Payload):
     """Represents an incoming message payload."""
 
@@ -111,7 +86,6 @@ class IncomingPayload(Payload):
             int(payload[14:16], 16),
         )
         self.payload = payload
-        return
 
 
 class StatusPayload(IncomingPayload):
@@ -119,44 +93,41 @@ class StatusPayload(IncomingPayload):
 
     def is_valid(self) -> bool:
         """Gets the value indicates whether the message is valid."""
-        return (
-            self.get_command() == 0x50
-            and self.get_id0() == 0x01
-            and self.get_id1() == 0x01
-        )
+        return self.command == 0x50 and self.id0 == 0x01 and self.id1 == 0x01
 
     def is_locked(self) -> bool:
         """Gets the value indicates whether the device is locked."""
-        return (FLAG_LOCK & self.get_data0()) == FLAG_LOCK
+        return (FLAG_LOCK & self.data0) == FLAG_LOCK
 
     def get_mode(self) -> str:
         """Gets the mode set on the device."""
         return (
             MANUAL_MODE
-            if ((FLAG_MANUAL_MODE & self.get_data0()) == FLAG_MANUAL_MODE)
+            if ((FLAG_MANUAL_MODE & self.data0) == FLAG_MANUAL_MODE)
             else WEEKLY_MODE
         )
 
     def is_on(self) -> bool:
         """Gets the value indicates whether the device is turned on."""
-        return (FLAG_POWER & self.get_data0()) == FLAG_POWER
+        return (FLAG_POWER & self.data0) == FLAG_POWER
 
     def get_calibration(self) -> int:
         """Gets the calibration value of the device."""
-        return self.get_data1() - 256
+        return self.data1 - 256
 
     def get_setpoint(self) -> float:
         """Gets the current set point value of the device."""
-        return float(self.get_data2()) / 2.0
+        return float(self.data2) / 2.0
 
     def get_temperature(self) -> float:
         """Gets the current temperature returned by the device."""
-        return float(self.get_data3()) / 2.0
+        return float(self.data3) / 2.0
 
 
 class OutgoingPayload(Payload):
     """Represents an outgoing message payload."""
 
+    # pylint: disable=too-many-arguments
     def __init__(
         self,
         command: int,
@@ -186,10 +157,11 @@ class OutgoingPayload(Payload):
             data3,
             self.__calculate_checksum(command, ID0, ID1, data0, data1, data2, data3),
         )
-        return
 
+    # pylint: disable=too-many-arguments
+    @classmethod
     def __calculate_checksum(
-        self,
+        cls,
         command: int,
         id0: int,
         id1: int,
@@ -212,25 +184,25 @@ class OutgoingPayload(Payload):
         """
         return (command + id0 + id1 + data0 + data1 + data2 + data3) & 0xFF ^ 0xA5
 
-    def getBytesHex(self) -> bytearray:
+    def get_bytes_array(self) -> bytearray:
         """Returns the outgoing message as a byte array."""
         result = bytearray()
-        result.append(self.get_command())
-        result.append(self.get_id0())
-        result.append(self.get_id1())
-        result.append(self.get_data0())
-        result.append(self.get_data1())
-        result.append(self.get_data2())
-        result.append(self.get_data3())
+        result.append(self.command)
+        result.append(self.id0)
+        result.append(self.id1)
+        result.append(self.data0)
+        result.append(self.data1)
+        result.append(self.data2)
+        result.append(self.data3)
         result.append(
             self.__calculate_checksum(
-                self.get_command(),
-                self.get_id0(),
-                self.get_id1(),
-                self.get_data0(),
-                self.get_data1(),
-                self.get_data2(),
-                self.get_data3(),
+                self.command,
+                self.id0,
+                self.id1,
+                self.data0,
+                self.data1,
+                self.data2,
+                self.data3,
             )
         )
         return result
@@ -242,12 +214,12 @@ class ReadStatusCommandPayload(OutgoingPayload):
     def __init__(self):
         """Initialize a new instance of  `ReadStatusCommandPayload` class."""
         super().__init__(0xA0, 0x00, 0x00, 0x00, 0x00)
-        return
 
 
 class SetAllDataCommandPayload(OutgoingPayload):
     """Represents a request to set all parameters of the device."""
 
+    # pylint: disable=too-many-arguments
     def __init__(
         self, mode: str, power: str, lock: str, calibration: int, setpoint: float
     ):
@@ -280,7 +252,6 @@ class SetAllDataCommandPayload(OutgoingPayload):
             int(setpoint * 2.0),
             data3,
         )
-        return
 
 
 class UnLockCommandPayload(OutgoingPayload):
@@ -289,7 +260,6 @@ class UnLockCommandPayload(OutgoingPayload):
     def __init__(self):
         """Initialize a new instance of  `UnLockCommandPayload` class."""
         super().__init__(0xA4, 0, 1, 1, 1)
-        return
 
 
 class LockCommandPayload(OutgoingPayload):
@@ -298,7 +268,6 @@ class LockCommandPayload(OutgoingPayload):
     def __init__(self):
         """Initialize a new instance of  `LockCommandPayload` class."""
         super().__init__(0xA4, 1, 1, 1, 1)
-        return
 
 
 class SetTimeCommandPayload(OutgoingPayload):
@@ -312,7 +281,6 @@ class SetTimeCommandPayload(OutgoingPayload):
             time: The date time value to set on the device.
         """
         super().__init__(0xA8, time.second, time.minute, time.hour, time.weekday() + 1)
-        return
 
 
 class BHT1000:
@@ -340,7 +308,6 @@ class BHT1000:
         self._locked: Union[str, None] = None
         self._calibration: Union[int, None] = None
         self._idle: Union[bool, None] = None
-        return
 
     def check_host(self) -> bool:
         """
@@ -354,6 +321,7 @@ class BHT1000:
                 sock.settimeout(10)
                 sock.connect((self._host, self._port))
             return True
+        # pylint: disable=bare-except
         except:
             return False
 
@@ -366,10 +334,11 @@ class BHT1000:
         """
         try:
             _LOGGER.debug("read status (%s:%s)", self._host, self._port)
-            self.__sendCommand(ReadStatusCommandPayload())
+            self.__send_command(ReadStatusCommandPayload())
             return True
-        except Exception as e:
-            _LOGGER.error(e)
+        # pylint: disable=broad-except
+        except Exception as error:
+            _LOGGER.error(error)
             return False
 
     def turn_on(self) -> bool:
@@ -381,7 +350,7 @@ class BHT1000:
         """
         if self.__is_data_valid():
             _LOGGER.debug("turn on (%s:%s)", self._host, self._port)
-            return self.__sendCommand(
+            return self.__send_command(
                 SetAllDataCommandPayload(
                     self._mode,
                     STATE_ON,
@@ -401,7 +370,7 @@ class BHT1000:
         """
         if self.__is_data_valid():
             _LOGGER.debug("turn off (%s:%s)", self._host, self._port)
-            return self.__sendCommand(
+            return self.__send_command(
                 SetAllDataCommandPayload(
                     self._mode,
                     STATE_OFF,
@@ -423,7 +392,7 @@ class BHT1000:
             _LOGGER.debug(
                 "set temperature to %f (%s:%s)", temperature, self._host, self._port
             )
-            return self.__sendCommand(
+            return self.__send_command(
                 SetAllDataCommandPayload(
                     self._mode,
                     self._power,
@@ -443,7 +412,7 @@ class BHT1000:
         """
         if self.__is_data_valid():
             _LOGGER.debug("lock (%s:%s)", self._host, self._port)
-            return self.__sendCommand(LockCommandPayload())
+            return self.__send_command(LockCommandPayload())
         return False
 
     def unlock(self) -> bool:
@@ -455,7 +424,7 @@ class BHT1000:
         """
         if self.__is_data_valid():
             _LOGGER.debug("unlock (%s:%s)", self._host, self._port)
-            return self.__sendCommand(UnLockCommandPayload())
+            return self.__send_command(UnLockCommandPayload())
         return False
 
     def set_manual_mode(self) -> bool:
@@ -467,7 +436,7 @@ class BHT1000:
         """
         if self.__is_data_valid():
             _LOGGER.debug("set manual mode (%s:%s)", self._host, self._port)
-            return self.__sendCommand(
+            return self.__send_command(
                 SetAllDataCommandPayload(
                     MANUAL_MODE,
                     self._power,
@@ -487,7 +456,7 @@ class BHT1000:
         """
         if self.__is_data_valid():
             _LOGGER.debug("set weekly mode (%s:%s)", self._host, self._port)
-            return self.__sendCommand(
+            return self.__send_command(
                 SetAllDataCommandPayload(
                     WEEKLY_MODE,
                     self._power,
@@ -510,7 +479,7 @@ class BHT1000:
         """
         if self.__is_data_valid():
             _LOGGER.debug("set time (%s:%s)", self._host, self._port)
-            return self.__sendCommand(SetTimeCommandPayload(time))
+            return self.__send_command(SetTimeCommandPayload(time))
         return False
 
     def __is_data_valid(self) -> bool:
@@ -556,7 +525,7 @@ class BHT1000:
         """
         return self._idle
 
-    def __sendCommand(self, command: OutgoingPayload) -> bool:
+    def __send_command(self, command: OutgoingPayload) -> bool:
         """
         Sends the specified command message to the thermostat.
 
@@ -567,50 +536,52 @@ class BHT1000:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
                 sock.settimeout(10)
                 sock.connect((self._host, self._port))
-                bytesToSend = command.getBytesHex()
+                bytes_to_send = command.get_bytes_array()
                 _LOGGER.debug(
-                    "bytes to send (%s:%s): %s", self._host, self._port, bytesToSend
+                    "bytes to send (%s:%s): %s", self._host, self._port, bytes_to_send
                 )
-                sock.send(bytesToSend)
-                bytesReceived = binascii.hexlify(sock.recv(64))
+                sock.send(bytes_to_send)
+                received_bytes = binascii.hexlify(sock.recv(64))
                 _LOGGER.debug(
-                    "bytes received (%s:%s): %s", self._host, self._port, bytesReceived
+                    "bytes received (%s:%s): %s", self._host, self._port, received_bytes
                 )
 
-            if len(bytesReceived) > 3:
-                response = StatusPayload(bytesReceived)
-                if response.is_valid():
-                    wasIdle = self._idle is True or self._idle is None
-                    self._current_temperature = response.get_temperature()
-                    self._setpoint = response.get_setpoint()
-                    self._calibration = response.get_calibration()
-                    self._power = STATE_ON if response.is_on() else STATE_OFF
-                    self._mode = response.get_mode()
-                    self._locked = STATE_ON if response.is_locked() else STATE_OFF
-
-                    if self._power is STATE_ON:
-                        if (
-                            wasIdle
-                            and self._current_temperature
-                            < self._setpoint - self._hysteresis / 2.0
-                        ):
-                            self._idle = False
-                        else:
-                            if (
-                                wasIdle is False
-                                and self._current_temperature
-                                > self._setpoint + self._hysteresis / 2.0
-                            ):
-                                self._idle = True
-                            else:
-                                self._idle = wasIdle
-                    else:
-                        self._idle = True
-                    return True
-                else:
-                    return False
-            else:
+            if len(received_bytes) <= 3:
                 return False
-        except Exception as e:
-            _LOGGER.error(e)
+
+            response = StatusPayload(received_bytes)
+            if not response.is_valid():
+                return False
+
+            was_idle = self._idle is True or self._idle is None
+            self._current_temperature = response.get_temperature()
+            self._setpoint = response.get_setpoint()
+            self._calibration = response.get_calibration()
+            self._power = STATE_ON if response.is_on() else STATE_OFF
+            self._mode = response.get_mode()
+            self._locked = STATE_ON if response.is_locked() else STATE_OFF
+
+            if self._power is STATE_ON:
+                if (
+                    was_idle
+                    and self._current_temperature
+                    < self._setpoint - self._hysteresis / 2.0
+                ):
+                    self._idle = False
+                else:
+                    if (
+                        was_idle is False
+                        and self._current_temperature
+                        > self._setpoint + self._hysteresis / 2.0
+                    ):
+                        self._idle = True
+                    else:
+                        self._idle = was_idle
+            else:
+                self._idle = True
+
+            return True
+        # pylint: disable=broad-except
+        except Exception as error:
+            _LOGGER.error(error)
             return False

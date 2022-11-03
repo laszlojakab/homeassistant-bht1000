@@ -7,6 +7,7 @@ from .bht1000 import BHT1000
 from .const import CONTROLLER, DOMAIN, PORT
 
 
+# pylint: disable=unused-argument
 async def async_setup(hass: HomeAssistantType, config: ConfigType) -> bool:
     """
     Set up the BHT1000 component.
@@ -33,7 +34,7 @@ async def async_setup_entry(hass: HomeAssistantType, config_entry: ConfigEntry) 
     Returns:
         The value indicates whether the setup succeeded.
     """
-    if not (config_entry.data[CONF_HOST] in hass.data[DOMAIN][CONTROLLER]):
+    if config_entry.data[CONF_HOST] not in hass.data[DOMAIN][CONTROLLER]:
         hass.data[DOMAIN][CONTROLLER][config_entry.data[CONF_HOST]] = BHT1000(
             config_entry.data[CONF_HOST], PORT
         )

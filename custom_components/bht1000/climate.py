@@ -2,7 +2,7 @@
 import logging
 from datetime import datetime
 
-from homeassistant.components.climate import ClimateEntity
+from homeassistant.components.climate import ClimateEntity, HVACMode
 from homeassistant.components.climate.const import (
     CURRENT_HVAC_HEAT,
     CURRENT_HVAC_IDLE,
@@ -22,6 +22,7 @@ from homeassistant.const import (
     TEMP_CELSIUS,
 )
 from homeassistant.helpers import device_registry, entity_platform
+from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import HomeAssistantType
 
@@ -31,6 +32,7 @@ from .const import CONTROLLER, DOMAIN, LOCK, SERVICE_SYNC_TIME, UNLOCK
 _LOGGER = logging.getLogger(__name__)
 
 
+# pylint: disable=too-many-instance-attributes
 class Bht1000Device(ClimateEntity):
     """
     Represents a BHT1000 thermostat climate entity.
@@ -46,8 +48,9 @@ class Bht1000Device(ClimateEntity):
             mac_address: The MAC address of the thermostat.
         """
         self._controller = controller
-        self._name = name
         self._mac_address = mac_address
+
+        self._attr_name = name
         self._attr_hvac_mode = None
         self._attr_min_temp = 0
         self._attr_max_temp = 35
@@ -57,83 +60,60 @@ class Bht1000Device(ClimateEntity):
         self._attr_supported_features = SUPPORT_TARGET_TEMPERATURE
         self._attr_current_temperature = None
         self._attr_hvac_action = None
+        self._attr_unique_id = self.name
 
-    @property
-    def name(self) -> str:
-        """Gets the name of the thermostat."""
-        return self._name
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, self.unique_id)},
+            manufacturer="Beca Energy",
+            model="BHT 1000",
+            name=self.name,
+            connections={(device_registry.CONNECTION_NETWORK_MAC, self._mac_address)}
+            if mac_address is not None
+            else None,
+        )
 
-    @property
-    def unique_id(self) -> str:
-        """Gets the unique ID of the thermostat."""
-        return self._name
-
-    @property
-    def device_info(self):
-        """Gets the device information of the thermostat."""
-        device_info = {
-            "identifiers": {(DOMAIN, self.unique_id)},
-            "name": self._name,
-            "manufacturer": "Beca Energy",
-            "model": "BHT 1000",
-        }
-
-        if self._mac_address:
-            device_info["connections"] = {
-                (device_registry.CONNECTION_NETWORK_MAC, self._mac_address)
-            }
-
-        return device_info
-
-    def set_hvac_mode(self, mode: str) -> None:
+    def set_hvac_mode(self, hvac_mode: HVACMode) -> None:
         """
         Sets the current HVAC mode.
 
         Args:
-            mode: The HVAC mode to set.
+            hvac_mode: The HVAC mode to set.
         """
-        if mode == HVAC_MODE_HEAT:
+        if hvac_mode == HVAC_MODE_HEAT:
             self._controller.turn_on()
             self._controller.set_manual_mode()
             return
-        if mode == HVAC_MODE_OFF:
+        if hvac_mode == HVAC_MODE_OFF:
             self._controller.turn_off()
             return
-        if mode == HVAC_MODE_AUTO:
+        if hvac_mode == HVAC_MODE_AUTO:
             self._controller.turn_on()
             self._controller.set_weekly_mode()
-        return
 
     def set_temperature(self, **kwargs) -> None:
         """Sets the target temperature."""
         if kwargs.get(ATTR_TEMPERATURE) is not None:
             self._controller.set_temperature(kwargs.get(ATTR_TEMPERATURE))
-        return
 
     def turn_on(self) -> None:
         """Turns on the thermostat."""
         self._controller.turn_on()
-        return
 
     def turn_off(self) -> None:
         """Turns off the thermostat."""
         self._controller.turn_off()
-        return
 
     def lock(self) -> None:
         """Locks on the thermostat."""
         self._controller.lock()
-        return
 
     def unlock(self) -> None:
         """Unlocks on the thermostat."""
         self._controller.unlock()
-        return
 
     def sync_time(self) -> None:
         """Synchronizes the time on the thermostat."""
         self._controller.set_time(datetime.now(tz=None))
-        return
 
     async def async_update(self) -> None:
         """Updates the state of the climate."""
