@@ -1,8 +1,10 @@
 import logging
+from typing import Any, Dict
 
 import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.const import CONF_HOST, CONF_MAC, CONF_NAME
+from homeassistant.data_entry_flow import FlowResult
 
 from .bht1000 import BHT1000
 from .const import DOMAIN, PORT
@@ -14,15 +16,15 @@ _LOGGER = logging.getLogger(__name__)
 class BHT1000ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     VERSION = 1
 
-    async def async_step_user(self, info):
+    async def async_step_user(self, user_info: Dict[str, Any]) -> FlowResult:
         errors = {}
-        if info is not None:
-            await self.async_set_unique_id(info[CONF_NAME])
+        if user_info is not None:
+            await self.async_set_unique_id(user_info[CONF_NAME])
             self._abort_if_unique_id_configured()
 
             valid = False
             try:
-                bht1000 = BHT1000(info[CONF_HOST], PORT)
+                bht1000 = BHT1000(user_info[CONF_HOST], PORT)
                 valid = bht1000.check_host()
                 if not valid:
                     errors["host"] = "invalid_host"
@@ -33,12 +35,12 @@ class BHT1000ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
             if valid:
                 data = {
-                    CONF_NAME: info[CONF_NAME],
-                    CONF_HOST: info[CONF_HOST],
-                    CONF_MAC: info[CONF_MAC] if CONF_MAC in info else None,
+                    CONF_NAME: user_info[CONF_NAME],
+                    CONF_HOST: user_info[CONF_HOST],
+                    CONF_MAC: user_info[CONF_MAC] if CONF_MAC in user_info else None,
                 }
                 return self.async_create_entry(
-                    title=f"BHT-1000 WiFi Thermostat ({info[CONF_NAME]})", data=data
+                    title=f"BHT-1000 WiFi Thermostat ({user_info[CONF_NAME]})", data=data
                 )
 
         return self.async_show_form(

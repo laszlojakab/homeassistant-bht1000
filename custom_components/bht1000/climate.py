@@ -11,6 +11,7 @@ from homeassistant.components.climate.const import (
     HVAC_MODE_OFF,
     SUPPORT_TARGET_TEMPERATURE,
 )
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     ATTR_TEMPERATURE,
     CONF_HOST,
@@ -20,8 +21,10 @@ from homeassistant.const import (
     TEMP_CELSIUS,
 )
 from homeassistant.helpers import device_registry, entity_platform
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.typing import HomeAssistantType
 
-from .bht1000 import BHT1000, STATE_OFF, STATE_ON, WEEKLY_MODE
+from .bht1000 import BHT1000, STATE_OFF, WEEKLY_MODE
 from .const import CONTROLLER, DOMAIN, LOCK, SERVICE_SYNC_TIME, UNLOCK
 
 _LOGGER = logging.getLogger(__name__)
@@ -66,7 +69,7 @@ class Bht1000Device(ClimateEntity):
 
         return device_info
 
-    def set_hvac_mode(self, mode: str):
+    def set_hvac_mode(self, mode: str) -> None:
         if mode == HVAC_MODE_HEAT:
             self._controller.turn_on()
             self._controller.set_manual_mode()
@@ -79,32 +82,32 @@ class Bht1000Device(ClimateEntity):
             self._controller.set_weekly_mode()
         return
 
-    def set_temperature(self, **kwargs):
+    def set_temperature(self, **kwargs) -> None:
         if kwargs.get(ATTR_TEMPERATURE) is not None:
             self._controller.set_temperature(kwargs.get(ATTR_TEMPERATURE))
         return
 
-    def turn_on(self):
+    def turn_on(self) -> None:
         self._controller.turn_on()
         return
 
-    def turn_off(self):
+    def turn_off(self) -> None:
         self._controller.turn_off()
         return
 
-    def lock(self):
+    def lock(self) -> None:
         self._controller.lock()
         return
 
-    def unlock(self):
+    def unlock(self) -> None:
         self._controller.unlock()
         return
 
-    def sync_time(self):
+    def sync_time(self) -> None:
         self._controller.set_time(datetime.now(tz=None))
         return
 
-    async def async_update(self):
+    async def async_update(self) -> None:
         if self._controller.read_status():
             if self._controller.power == STATE_OFF:
                 self._attr_hvac_mode = HVAC_MODE_OFF
@@ -131,11 +134,15 @@ class Bht1000Device(ClimateEntity):
         return
 
 
-async def async_setup_entry(hass, entry, async_add_entities):
+async def async_setup_entry(
+    hass: HomeAssistantType,
+    config_entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+):
     _LOGGER.info("Setting up BHT1000 platform.")
-    controller = hass.data[DOMAIN][CONTROLLER][entry.data[CONF_HOST]]
-    name = entry.data[CONF_NAME]
-    mac_address = entry.data[CONF_MAC] if CONF_MAC in entry.data else None
+    controller = hass.data[DOMAIN][CONTROLLER][config_entry.data[CONF_HOST]]
+    name = config_entry.data[CONF_NAME]
+    mac_address = config_entry.data[CONF_MAC] if CONF_MAC in config_entry.data else None
 
     platform = entity_platform.current_platform.get()
 

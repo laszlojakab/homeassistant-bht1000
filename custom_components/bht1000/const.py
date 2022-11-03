@@ -1,9 +1,12 @@
 """Define BHT-1000 thermostat constants."""
 
-CONTROLLER = "controller"
-DOMAIN = "bht1000"
-PORT = 8899
+from typing import Final
 
-SERVICE_SYNC_TIME = "sync_time"
-LOCK = "lock"
-UNLOCK = "unlock"
+
+CONTROLLER: Final[str] = "controller"
+DOMAIN: Final[str] = "bht1000"
+PORT: Final[int] = 8899
+
+SERVICE_SYNC_TIME: Final[str] = "sync_time"
+LOCK: Final[str] = "lock"
+UNLOCK: Final[str] = "unlock"

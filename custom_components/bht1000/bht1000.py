@@ -18,7 +18,7 @@ STATE_OFF = "off"
 
 
 class Payload:
-    def __init__(self, command, id0, id1, data0, data1, data2, data3, checksum):
+    def __init__(self, command: int, id0: int, id1: int, data0: int, data1: int, data2: int, data3: int, checksum: int):
         self._command = command
         self._id0 = id0
         self._id1 = id1
@@ -29,33 +29,33 @@ class Payload:
         self._checksum = checksum
         return
 
-    def get_command(self):
+    def get_command(self) -> int:
         return self._command
 
-    def get_id0(self):
+    def get_id0(self) -> int:
         return self._id0
 
-    def get_id1(self):
+    def get_id1(self) -> int:
         return self._id1
 
-    def get_data0(self):
+    def get_data0(self) -> int:
         return self._data0
 
-    def get_data1(self):
+    def get_data1(self) -> int:
         return self._data1
 
-    def get_data2(self):
+    def get_data2(self) -> int:
         return self._data2
 
-    def get_data3(self):
+    def get_data3(self) -> int:
         return self._data3
 
-    def get_checksum(self):
+    def get_checksum(self) -> int:
         return self._checksum
 
 
 class IncomingPayload(Payload):
-    def __init__(self, payload):
+    def __init__(self, payload: bytes):
         super().__init__(
             int(payload[:2], 16),
             int(payload[2:4], 16),
@@ -71,38 +71,45 @@ class IncomingPayload(Payload):
 
 
 class StatusPayload(IncomingPayload):
-    def is_valid(self):
+    def is_valid(self) -> bool:
         return (
             self.get_command() == 0x50
             and self.get_id0() == 0x01
             and self.get_id1() == 0x01
         )
 
-    def is_locked(self):
+    def is_locked(self) -> bool:
         return (FLAG_LOCK & self.get_data0()) == FLAG_LOCK
 
-    def get_mode(self):
+    def get_mode(self) -> str:
         return (
             MANUAL_MODE
             if ((FLAG_MANUAL_MODE & self.get_data0()) == FLAG_MANUAL_MODE)
             else WEEKLY_MODE
         )
 
-    def is_on(self):
+    def is_on(self) -> bool:
         return (FLAG_POWER & self.get_data0()) == FLAG_POWER
 
-    def get_calibration(self):
+    def get_calibration(self) -> int:
         return self.get_data1() - 256
 
-    def get_setpoint(self):
+    def get_setpoint(self) -> float:
         return float(self.get_data2()) / 2.0
 
-    def get_temperature(self):
+    def get_temperature(self) -> float:
         return float(self.get_data3()) / 2.0
 
 
 class OutgoingPayload(Payload):
-    def __init__(self, command, data0, data1, data2, data3):
+    def __init__(
+        self,
+        command: int,
+        data0: int,
+        data1: int,
+        data2: int,
+        data3: int,
+    ):
         super().__init__(
             command,
             ID0,
@@ -115,10 +122,19 @@ class OutgoingPayload(Payload):
         )
         return
 
-    def __calculate_checksum(self, command, id0, id1, data0, data1, data2, data3):
+    def __calculate_checksum(
+        self,
+        command: int,
+        id0: int,
+        id1: int,
+        data0: int,
+        data1: int,
+        data2: int,
+        data3: int,
+    ):
         return (command + id0 + id1 + data0 + data1 + data2 + data3) & 0xFF ^ 0xA5
 
-    def getBytesHex(self):
+    def getBytesHex(self) -> bytearray:
         result = bytearray()
         result.append(self.get_command())
         result.append(self.get_id0())
@@ -148,7 +164,9 @@ class ReadStatusCommandPayload(OutgoingPayload):
 
 
 class SetAllDataCommandPayload(OutgoingPayload):
-    def __init__(self, mode, power, lock, calibration, setpoint):
+    def __init__(
+        self, mode: str, power: str, lock: str, calibration: int, setpoint: float
+    ):
         data0 = 0x00
         data3 = 0x00
 
@@ -184,27 +202,26 @@ class LockCommandPayload(OutgoingPayload):
 
 
 class SetTimeCommandPayload(OutgoingPayload):
-    def __init__(self, time):
+    def __init__(self, time: datetime.datetime):
         super().__init__(0xA8, time.second, time.minute, time.hour, time.weekday() + 1)
         return
 
 
 class BHT1000:
-    def __init__(self, host, port, hysteresis=1.0):
-        self._host = host
-        self._port = port
-        self._hysteresis = hysteresis
-        self._current_temperature = None
-        self._setpoint = None
-        self._power = None
-        self._mode = None
-        self._locked = None
-        self._calibration = None
-        self._hysteresis = hysteresis
-        self._idle = None
+    def __init__(self, host: str, port: int, hysteresis: float = 1.0):
+        self._host: Final[str] = host
+        self._port: Final[int] = port
+        self._hysteresis: Final[float] = hysteresis
+        self._current_temperature: Union[float, None] = None
+        self._setpoint: Union[float, None] = None
+        self._power: Union[str, None] = None
+        self._mode: Union[str, None] = None
+        self._locked: Union[str, None] = None
+        self._calibration: Union[int, None] = None
+        self._idle: Union[bool, None] = None
         return
 
-    def check_host(self):
+    def check_host(self) -> bool:
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
                 sock.settimeout(10)
@@ -213,7 +230,7 @@ class BHT1000:
         except:
             return False
 
-    def read_status(self):
+    def read_status(self) -> bool:
         try:
             _LOGGER.debug("read status (%s:%s)", self._host, self._port)
             self.__sendCommand(ReadStatusCommandPayload())
@@ -222,7 +239,7 @@ class BHT1000:
             _LOGGER.error(e)
             return False
 
-    def turn_on(self):
+    def turn_on(self) -> bool:
         if self.__is_data_valid():
             _LOGGER.debug("turn on (%s:%s)", self._host, self._port)
             return self.__sendCommand(
@@ -236,7 +253,7 @@ class BHT1000:
             )
         return False
 
-    def turn_off(self):
+    def turn_off(self) -> bool:
         if self.__is_data_valid():
             _LOGGER.debug("turn off (%s:%s)", self._host, self._port)
             return self.__sendCommand(
@@ -250,7 +267,7 @@ class BHT1000:
             )
         return False
 
-    def set_temperature(self, temperature):
+    def set_temperature(self, temperature: float) -> bool:
         if self.__is_data_valid():
             _LOGGER.debug(
                 "set temperature to %f (%s:%s)", temperature, self._host, self._port
@@ -266,19 +283,19 @@ class BHT1000:
             )
         return False
 
-    def lock(self):
+    def lock(self) -> bool:
         if self.__is_data_valid():
             _LOGGER.debug("lock (%s:%s)", self._host, self._port)
             return self.__sendCommand(LockCommandPayload())
         return False
 
-    def unlock(self):
+    def unlock(self) -> bool:
         if self.__is_data_valid():
             _LOGGER.debug("unlock (%s:%s)", self._host, self._port)
             return self.__sendCommand(UnLockCommandPayload())
         return False
 
-    def set_manual_mode(self):
+    def set_manual_mode(self) -> bool:
         if self.__is_data_valid():
             _LOGGER.debug("set manual mode (%s:%s)", self._host, self._port)
             return self.__sendCommand(
@@ -292,7 +309,7 @@ class BHT1000:
             )
         return False
 
-    def set_weekly_mode(self):
+    def set_weekly_mode(self) -> bool:
         if self.__is_data_valid():
             _LOGGER.debug("set weekly mode (%s:%s)", self._host, self._port)
             return self.__sendCommand(
@@ -306,13 +323,13 @@ class BHT1000:
             )
         return False
 
-    def set_time(self, time):
+    def set_time(self, time: datetime.datetime) -> bool:
         if self.__is_data_valid():
             _LOGGER.debug("set time (%s:%s)", self._host, self._port)
             return self.__sendCommand(SetTimeCommandPayload(time))
         return False
 
-    def __is_data_valid(self):
+    def __is_data_valid(self) -> bool:
         result = (
             (self._mode is not None)
             and (self._power is not None)
@@ -323,26 +340,26 @@ class BHT1000:
         return result
 
     @property
-    def current_temperature(self):
+    def current_temperature(self) -> Union[float, None]:
         return self._current_temperature
 
     @property
-    def mode(self):
+    def mode(self) -> Union[str, None]:
         return self._mode
 
     @property
-    def power(self):
+    def power(self) -> Union[str, None]:
         return self._power
 
     @property
-    def setpoint(self):
+    def setpoint(self) -> Union[float, None]:
         return self._setpoint
 
     @property
-    def idle(self):
+    def idle(self) -> Union[bool, None]:
         return self._idle
 
-    def __sendCommand(self, command):
+    def __sendCommand(self, command: OutgoingPayload) -> bool:
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
                 sock.settimeout(10)
