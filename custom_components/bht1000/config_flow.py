@@ -39,7 +39,7 @@ class BHT1000ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             self._abort_if_unique_id_configured()
 
             bht1000 = BHT1000(user_input[CONF_HOST], PORT)
-            if not bht1000.check_host():
+            if not await bht1000.check_host():
                 errors["host"] = "invalid_host"
             else:
                 data = {

@@ -1,9 +1,9 @@
 """ Module of BHT1000 controller. """
+import asyncio
 import binascii
 from dataclasses import dataclass
 import datetime
 import logging
-import socket
 from typing import Final, Union
 
 _LOGGER = logging.getLogger(__name__)
@@ -309,7 +309,7 @@ class BHT1000:
         self._calibration: Union[int, None] = None
         self._idle: Union[bool, None] = None
 
-    def check_host(self) -> bool:
+    async def check_host(self) -> bool:
         """
         Checks if the thermostat is reachable.
 
@@ -317,15 +317,19 @@ class BHT1000:
             The value indicates whether the thermostat is reachable.
         """
         try:
-            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-                sock.settimeout(10)
-                sock.connect((self._host, self._port))
+            writer = (
+                await asyncio.wait_for(
+                    asyncio.open_connection(self._host, self._port), 10
+                )
+            )[1]
+            writer.close()
+            await writer.wait_closed()
             return True
         # pylint: disable=bare-except
         except:
             return False
 
-    def read_status(self) -> bool:
+    async def read_status(self) -> bool:
         """
         Updates the current status of the thermostat.
 
@@ -334,14 +338,14 @@ class BHT1000:
         """
         try:
             _LOGGER.debug("read status (%s:%s)", self._host, self._port)
-            self.__send_command(ReadStatusCommandPayload())
+            await self.__send_command(ReadStatusCommandPayload())
             return True
         # pylint: disable=broad-except
         except Exception as error:
             _LOGGER.error(error)
             return False
 
-    def turn_on(self) -> bool:
+    async def turn_on(self) -> bool:
         """
         Turns on the thermostat.
 
@@ -350,7 +354,7 @@ class BHT1000:
         """
         if self.__is_data_valid():
             _LOGGER.debug("turn on (%s:%s)", self._host, self._port)
-            return self.__send_command(
+            return await self.__send_command(
                 SetAllDataCommandPayload(
                     self._mode,
                     STATE_ON,
@@ -361,7 +365,7 @@ class BHT1000:
             )
         return False
 
-    def turn_off(self) -> bool:
+    async def turn_off(self) -> bool:
         """
         Turns off the thermostat.
 
@@ -370,7 +374,7 @@ class BHT1000:
         """
         if self.__is_data_valid():
             _LOGGER.debug("turn off (%s:%s)", self._host, self._port)
-            return self.__send_command(
+            return await self.__send_command(
                 SetAllDataCommandPayload(
                     self._mode,
                     STATE_OFF,
@@ -381,7 +385,7 @@ class BHT1000:
             )
         return False
 
-    def set_temperature(self, temperature: float) -> bool:
+    async def set_temperature(self, temperature: float) -> bool:
         """
         Sets the set point on the thermostat
 
@@ -392,7 +396,7 @@ class BHT1000:
             _LOGGER.debug(
                 "set temperature to %f (%s:%s)", temperature, self._host, self._port
             )
-            return self.__send_command(
+            return await self.__send_command(
                 SetAllDataCommandPayload(
                     self._mode,
                     self._power,
@@ -403,7 +407,7 @@ class BHT1000:
             )
         return False
 
-    def lock(self) -> bool:
+    async def lock(self) -> bool:
         """
         Locks the thermostat.
 
@@ -412,10 +416,10 @@ class BHT1000:
         """
         if self.__is_data_valid():
             _LOGGER.debug("lock (%s:%s)", self._host, self._port)
-            return self.__send_command(LockCommandPayload())
+            return await self.__send_command(LockCommandPayload())
         return False
 
-    def unlock(self) -> bool:
+    async def unlock(self) -> bool:
         """
         Unlocks the thermostat.
 
@@ -424,10 +428,10 @@ class BHT1000:
         """
         if self.__is_data_valid():
             _LOGGER.debug("unlock (%s:%s)", self._host, self._port)
-            return self.__send_command(UnLockCommandPayload())
+            return await self.__send_command(UnLockCommandPayload())
         return False
 
-    def set_manual_mode(self) -> bool:
+    async def set_manual_mode(self) -> bool:
         """
         Sets the thermostat into manual mode.
 
@@ -436,7 +440,7 @@ class BHT1000:
         """
         if self.__is_data_valid():
             _LOGGER.debug("set manual mode (%s:%s)", self._host, self._port)
-            return self.__send_command(
+            return await self.__send_command(
                 SetAllDataCommandPayload(
                     MANUAL_MODE,
                     self._power,
@@ -447,7 +451,7 @@ class BHT1000:
             )
         return False
 
-    def set_weekly_mode(self) -> bool:
+    async def set_weekly_mode(self) -> bool:
         """
         Sets the thermostat into weekly mode.
 
@@ -456,7 +460,7 @@ class BHT1000:
         """
         if self.__is_data_valid():
             _LOGGER.debug("set weekly mode (%s:%s)", self._host, self._port)
-            return self.__send_command(
+            return await self.__send_command(
                 SetAllDataCommandPayload(
                     WEEKLY_MODE,
                     self._power,
@@ -467,7 +471,7 @@ class BHT1000:
             )
         return False
 
-    def set_time(self, time: datetime.datetime) -> bool:
+    async def set_time(self, time: datetime.datetime) -> bool:
         """
         Sets the time on the thermostat.
 
@@ -479,7 +483,7 @@ class BHT1000:
         """
         if self.__is_data_valid():
             _LOGGER.debug("set time (%s:%s)", self._host, self._port)
-            return self.__send_command(SetTimeCommandPayload(time))
+            return await self.__send_command(SetTimeCommandPayload(time))
         return False
 
     def __is_data_valid(self) -> bool:
@@ -525,7 +529,7 @@ class BHT1000:
         """
         return self._idle
 
-    def __send_command(self, command: OutgoingPayload) -> bool:
+    async def __send_command(self, command: OutgoingPayload) -> bool:
         """
         Sends the specified command message to the thermostat.
 
@@ -533,18 +537,23 @@ class BHT1000:
             The value indicates whether the sending was successful.
         """
         try:
-            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-                sock.settimeout(10)
-                sock.connect((self._host, self._port))
+            reader, writer = await asyncio.wait_for(
+                asyncio.open_connection(self._host, self._port), 10
+            )
+
+            try:
                 bytes_to_send = command.get_bytes_array()
                 _LOGGER.debug(
                     "bytes to send (%s:%s): %s", self._host, self._port, bytes_to_send
                 )
-                sock.send(bytes_to_send)
-                received_bytes = binascii.hexlify(sock.recv(64))
+                writer.write(bytes_to_send)
+                received_bytes = binascii.hexlify(await reader.read(64))
                 _LOGGER.debug(
                     "bytes received (%s:%s): %s", self._host, self._port, received_bytes
                 )
+            finally:
+                writer.close()
+                await writer.wait_closed()
 
             if len(received_bytes) <= 3:
                 return False

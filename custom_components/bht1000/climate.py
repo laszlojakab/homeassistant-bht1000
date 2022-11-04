@@ -72,7 +72,7 @@ class Bht1000Device(ClimateEntity):
             else None,
         )
 
-    def set_hvac_mode(self, hvac_mode: HVACMode) -> None:
+    async def async_set_hvac_mode(self, hvac_mode: HVACMode) -> None:
         """
         Sets the current HVAC mode.
 
@@ -80,44 +80,44 @@ class Bht1000Device(ClimateEntity):
             hvac_mode: The HVAC mode to set.
         """
         if hvac_mode == HVAC_MODE_HEAT:
-            self._controller.turn_on()
-            self._controller.set_manual_mode()
+            await self._controller.turn_on()
+            await self._controller.set_manual_mode()
             return
         if hvac_mode == HVAC_MODE_OFF:
-            self._controller.turn_off()
+            await self._controller.turn_off()
             return
         if hvac_mode == HVAC_MODE_AUTO:
-            self._controller.turn_on()
-            self._controller.set_weekly_mode()
+            await self._controller.turn_on()
+            await self._controller.set_weekly_mode()
 
-    def set_temperature(self, **kwargs) -> None:
+    async def async_set_temperature(self, **kwargs) -> None:
         """Sets the target temperature."""
         if kwargs.get(ATTR_TEMPERATURE) is not None:
-            self._controller.set_temperature(kwargs.get(ATTR_TEMPERATURE))
+            await self._controller.set_temperature(kwargs.get(ATTR_TEMPERATURE))
 
-    def turn_on(self) -> None:
+    async def turn_on(self) -> None:
         """Turns on the thermostat."""
-        self._controller.turn_on()
+        await self._controller.turn_on()
 
-    def turn_off(self) -> None:
+    async def turn_off(self) -> None:
         """Turns off the thermostat."""
-        self._controller.turn_off()
+        await self._controller.turn_off()
 
-    def lock(self) -> None:
+    async def lock(self) -> None:
         """Locks on the thermostat."""
-        self._controller.lock()
+        await self._controller.lock()
 
-    def unlock(self) -> None:
+    async def unlock(self) -> None:
         """Unlocks on the thermostat."""
-        self._controller.unlock()
+        await self._controller.unlock()
 
-    def sync_time(self) -> None:
+    async def sync_time(self) -> None:
         """Synchronizes the time on the thermostat."""
-        self._controller.set_time(datetime.now(tz=None))
+        await self._controller.set_time(datetime.now(tz=None))
 
     async def async_update(self) -> None:
         """Updates the state of the climate."""
-        if self._controller.read_status():
+        if await self._controller.read_status():
             if self._controller.power == STATE_OFF:
                 self._attr_hvac_mode = HVAC_MODE_OFF
 
