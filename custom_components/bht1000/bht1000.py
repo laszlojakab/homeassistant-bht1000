@@ -555,7 +555,7 @@ class BHT1000:
                 writer.close()
                 await writer.wait_closed()
 
-            if len(received_bytes) <= 3:
+            if len(received_bytes) < 16:
                 return False
 
             response = StatusPayload(received_bytes)
