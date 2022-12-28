@@ -19,10 +19,6 @@ FLAG_LOCK = 0x04
 FLAG_MANUAL_MODE = 0x08
 FLAG_POWER = 0x10
 
-STATE_ON = "on"
-STATE_OFF = "off"
-
-
 @dataclass
 # pylint: disable=too-many-instance-attributes
 class Payload:
@@ -244,7 +240,7 @@ class SetAllDataCommandPayload(OutgoingPayload):
         if mode == MANUAL_MODE:
             data0 = data0 | FLAG_MANUAL_MODE
 
-        if power == STATE_ON:
+        if power:
             data0 = data0 | FLAG_POWER
 
         super().__init__(
@@ -359,7 +355,7 @@ class BHT1000:
             return await self.__send_command(
                 SetAllDataCommandPayload(
                     self._mode,
-                    STATE_ON,
+                    True,
                     self._locked,
                     self._calibration,
                     self._setpoint,
@@ -379,7 +375,7 @@ class BHT1000:
             return await self.__send_command(
                 SetAllDataCommandPayload(
                     self._mode,
-                    STATE_OFF,
+                    False,
                     self._locked,
                     self._calibration,
                     self._setpoint,
@@ -585,11 +581,11 @@ class BHT1000:
             self._current_temperature = response.get_temperature()
             self._setpoint = response.get_setpoint()
             self._calibration = response.get_calibration()
-            self._power = STATE_ON if response.is_on() else STATE_OFF
+            self._power = response.is_on()
             self._mode = response.get_mode()
             self._locked = response.is_locked()
 
-            if self._power is STATE_ON:
+            if self._power:
                 if (
                     was_idle
                     and self._current_temperature

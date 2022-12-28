@@ -26,7 +26,7 @@ from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import HomeAssistantType
 
-from .bht1000 import BHT1000, STATE_OFF, WEEKLY_MODE
+from .bht1000 import BHT1000, WEEKLY_MODE
 from .const import CONTROLLER, DOMAIN, SERVICE_SYNC_TIME
 
 _LOGGER = logging.getLogger(__name__)
@@ -110,7 +110,7 @@ class Bht1000Device(ClimateEntity):
     async def async_update(self) -> None:
         """Updates the state of the climate."""
         if await self._controller.read_status():
-            if self._controller.power == STATE_OFF:
+            if self._controller.power is False:
                 self._attr_hvac_mode = HVAC_MODE_OFF
 
             if self._controller.mode == WEEKLY_MODE:
@@ -120,7 +120,7 @@ class Bht1000Device(ClimateEntity):
             self._attr_current_temperature = self._controller.current_temperature
             self._attr_target_temperature = self._controller.setpoint
 
-            if self._controller.power == STATE_OFF:
+            if self._controller.power is False:
                 self._attr_hvac_action = CURRENT_HVAC_OFF
             elif (self._controller.setpoint is None) or (
                 self._controller.current_temperature is None
