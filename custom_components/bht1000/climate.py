@@ -151,7 +151,7 @@ async def async_setup_entry(
     Returns:
         The value indicates whether the setup succeeded.
     """
-    _LOGGER.info("Setting up BHT1000 platform.")
+    _LOGGER.info("Setting up BHT1000 climate entity.")
     controller = hass.data[DOMAIN][CONTROLLER][config_entry.data[CONF_HOST]]
     name = config_entry.data[CONF_NAME]
     mac_address = config_entry.data[CONF_MAC] if CONF_MAC in config_entry.data else None
@@ -162,4 +162,4 @@ async def async_setup_entry(
 
     async_add_entities([Bht1000Device(controller, name, mac_address)])
 
-    _LOGGER.info("Setting up BHT1000 platform completed.")
+    _LOGGER.info("Setting up BHT1000 climate entity completed.")
