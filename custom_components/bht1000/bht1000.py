@@ -223,7 +223,7 @@ class SetAllDataCommandPayload(OutgoingPayload):
 
     # pylint: disable=too-many-arguments
     def __init__(
-        self, mode: str, power: str, lock: str, calibration: int, setpoint: float
+        self, mode: str, power: str, locked: bool, calibration: int, setpoint: float
     ):
         """
         Initialize a new instance of `SetAllDataCommandPayload` class.
@@ -238,7 +238,7 @@ class SetAllDataCommandPayload(OutgoingPayload):
         data0 = 0x00
         data3 = 0x00
 
-        if lock == STATE_ON:
+        if locked:
             data0 = data0 | FLAG_LOCK
 
         if mode == MANUAL_MODE:
@@ -307,7 +307,7 @@ class BHT1000:
         self._setpoint: Union[float, None] = None
         self._power: Union[str, None] = None
         self._mode: Union[str, None] = None
-        self._locked: Union[str, None] = None
+        self._locked: Union[bool, None] = None
         self._calibration: Union[int, None] = None
         self._idle: Union[bool, None] = None
 
@@ -531,6 +531,7 @@ class BHT1000:
         """
         return self._idle
 
+    @property
     def locked(self) -> Union[bool, None]:
         """Gets the value indicates whether the child lock is active."""
         return self._locked
@@ -586,7 +587,7 @@ class BHT1000:
             self._calibration = response.get_calibration()
             self._power = STATE_ON if response.is_on() else STATE_OFF
             self._mode = response.get_mode()
-            self._locked = STATE_ON if response.is_locked() else STATE_OFF
+            self._locked = response.is_locked()
 
             if self._power is STATE_ON:
                 if (
