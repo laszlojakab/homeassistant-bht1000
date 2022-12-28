@@ -112,11 +112,11 @@ class Bht1000Device(ClimateEntity):
         if await self._controller.read_status():
             if self._controller.power is False:
                 self._attr_hvac_mode = HVAC_MODE_OFF
-
-            if self._controller.mode == WEEKLY_MODE:
+            elif self._controller.mode == WEEKLY_MODE:
                 self._attr_hvac_mode = HVAC_MODE_AUTO
+            else:
+                self._attr_hvac_mode = HVAC_MODE_HEAT
 
-            self._attr_hvac_mode = HVAC_MODE_HEAT
             self._attr_current_temperature = self._controller.current_temperature
             self._attr_target_temperature = self._controller.setpoint
 
