@@ -1,10 +1,11 @@
 """ Module of BHT1000 controller. """
 import asyncio
 import binascii
-from dataclasses import dataclass
 import datetime
 import logging
+from dataclasses import dataclass
 from typing import Final, Union
+
 import async_timeout
 
 _LOGGER = logging.getLogger(__name__)
