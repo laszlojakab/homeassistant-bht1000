@@ -42,4 +42,8 @@ async def async_setup_entry(hass: HomeAssistantType, config_entry: ConfigEntry) 
     hass.async_create_task(
         hass.config_entries.async_forward_entry_setup(config_entry, "climate")
     )
+
+    hass.async_create_task(
+        hass.config_entries.async_forward_entry_setup(config_entry, "lock")
+    )
     return True
