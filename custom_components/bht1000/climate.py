@@ -27,7 +27,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import HomeAssistantType
 
 from .bht1000 import BHT1000, STATE_OFF, WEEKLY_MODE
-from .const import CONTROLLER, DOMAIN, LOCK, SERVICE_SYNC_TIME, UNLOCK
+from .const import CONTROLLER, DOMAIN, SERVICE_SYNC_TIME
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -103,14 +103,6 @@ class Bht1000Device(ClimateEntity):
         """Turns off the thermostat."""
         await self._controller.turn_off()
 
-    async def lock(self) -> None:
-        """Locks on the thermostat."""
-        await self._controller.lock()
-
-    async def unlock(self) -> None:
-        """Unlocks on the thermostat."""
-        await self._controller.unlock()
-
     async def sync_time(self) -> None:
         """Synchronizes the time on the thermostat."""
         await self._controller.set_time(datetime.now(tz=None))
@@ -167,10 +159,6 @@ async def async_setup_entry(
     platform = entity_platform.current_platform.get()
 
     platform.async_register_entity_service(SERVICE_SYNC_TIME, {}, SERVICE_SYNC_TIME)
-
-    platform.async_register_entity_service(LOCK, {}, LOCK)
-
-    platform.async_register_entity_service(UNLOCK, {}, UNLOCK)
 
     async_add_entities([Bht1000Device(controller, name, mac_address)])
 

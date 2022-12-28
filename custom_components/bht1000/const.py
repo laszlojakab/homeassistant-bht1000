@@ -14,9 +14,3 @@ PORT: Final[int] = 8899
 
 SERVICE_SYNC_TIME: Final[str] = "sync_time"
 """The name of the time synchronization service."""
-
-LOCK: Final[str] = "lock"
-"""The name of the locking service."""
-
-UNLOCK: Final[str] = "unlock"
-"""The name of the unlocking service."""
