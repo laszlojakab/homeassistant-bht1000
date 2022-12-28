@@ -549,14 +549,22 @@ class BHT1000:
 
             async with async_timeout.timeout(3):
                 try:
+                    _LOGGER.debug("data to send %s", command)
+
                     bytes_to_send = command.get_bytes_array()
                     _LOGGER.debug(
-                        "bytes to send (%s:%s): %s", self._host, self._port, bytes_to_send
+                        "bytes to send (%s:%s): %s",
+                        self._host,
+                        self._port,
+                        bytes_to_send,
                     )
                     writer.write(bytes_to_send)
                     received_bytes = binascii.hexlify(await reader.read(64))
                     _LOGGER.debug(
-                        "bytes received (%s:%s): %s", self._host, self._port, received_bytes
+                        "bytes received (%s:%s): %s",
+                        self._host,
+                        self._port,
+                        received_bytes,
                     )
                 except asyncio.TimeoutError:
                     return False
@@ -568,6 +576,7 @@ class BHT1000:
                 return False
 
             response = StatusPayload(received_bytes)
+            _LOGGER.debug("data received %s", response)
             if not response.is_valid():
                 return False
 
