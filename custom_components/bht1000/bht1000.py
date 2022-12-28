@@ -5,6 +5,7 @@ from dataclasses import dataclass
 import datetime
 import logging
 from typing import Final, Union
+import async_timeout
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -529,6 +530,10 @@ class BHT1000:
         """
         return self._idle
 
+    def locked(self) -> Union[bool, None]:
+        """Gets the value indicates whether the child lock is active."""
+        return self._locked
+
     async def __send_command(self, command: OutgoingPayload) -> bool:
         """
         Sends the specified command message to the thermostat.
@@ -541,19 +546,22 @@ class BHT1000:
                 asyncio.open_connection(self._host, self._port), 10
             )
 
-            try:
-                bytes_to_send = command.get_bytes_array()
-                _LOGGER.debug(
-                    "bytes to send (%s:%s): %s", self._host, self._port, bytes_to_send
-                )
-                writer.write(bytes_to_send)
-                received_bytes = binascii.hexlify(await reader.read(64))
-                _LOGGER.debug(
-                    "bytes received (%s:%s): %s", self._host, self._port, received_bytes
-                )
-            finally:
-                writer.close()
-                await writer.wait_closed()
+            async with async_timeout.timeout(3):
+                try:
+                    bytes_to_send = command.get_bytes_array()
+                    _LOGGER.debug(
+                        "bytes to send (%s:%s): %s", self._host, self._port, bytes_to_send
+                    )
+                    writer.write(bytes_to_send)
+                    received_bytes = binascii.hexlify(await reader.read(64))
+                    _LOGGER.debug(
+                        "bytes received (%s:%s): %s", self._host, self._port, received_bytes
+                    )
+                except asyncio.TimeoutError:
+                    return False
+                finally:
+                    writer.close()
+                    await writer.wait_closed()
 
             if len(received_bytes) < 16:
                 return False
@@ -591,6 +599,5 @@ class BHT1000:
 
             return True
         # pylint: disable=broad-except
-        except Exception as error:
-            _LOGGER.error(error)
+        except Exception:
             return False
