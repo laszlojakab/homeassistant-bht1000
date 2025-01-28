@@ -1,4 +1,5 @@
 """ Module of BHT1000 climate entity. """
+
 import logging
 
 from homeassistant.components.lock import LockEntity
@@ -7,7 +8,7 @@ from homeassistant.const import CONF_HOST, CONF_MAC, CONF_NAME
 from homeassistant.helpers import device_registry
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.typing import HomeAssistantType
+from homeassistant.core import HomeAssistant
 
 from .bht1000 import BHT1000
 from .const import CONTROLLER, DOMAIN
@@ -38,9 +39,11 @@ class Bht1000ChildLock(LockEntity):
 
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, self.unique_id)},
-            connections={(device_registry.CONNECTION_NETWORK_MAC, self._mac_address)}
-            if mac_address is not None
-            else None,
+            connections=(
+                {(device_registry.CONNECTION_NETWORK_MAC, self._mac_address)}
+                if mac_address is not None
+                else None
+            ),
         )
 
     async def async_lock(self, **kwargs) -> None:
@@ -56,8 +59,9 @@ class Bht1000ChildLock(LockEntity):
         if await self._controller.read_status():
             self._attr_is_locked = self._controller.locked
 
+
 async def async_setup_entry(
-    hass: HomeAssistantType,
+    hass: HomeAssistant,
     config_entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ):

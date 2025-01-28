@@ -1,30 +1,29 @@
 """ Module of BHT1000 climate entity. """
+
 import logging
 from datetime import datetime
 
-from homeassistant.components.climate import ClimateEntity, HVACMode
-from homeassistant.components.climate.const import (
-    CURRENT_HVAC_HEAT,
-    CURRENT_HVAC_IDLE,
-    CURRENT_HVAC_OFF,
-    HVAC_MODE_AUTO,
-    HVAC_MODE_HEAT,
-    HVAC_MODE_OFF,
-    SUPPORT_TARGET_TEMPERATURE,
+from homeassistant.components.climate import (
+    ClimateEntity,
+    ClimateEntityFeature,
+    HVACAction,
+    HVACMode,
 )
 from homeassistant.config_entries import ConfigEntry
+
 from homeassistant.const import (
     ATTR_TEMPERATURE,
     CONF_HOST,
     CONF_MAC,
     CONF_NAME,
     STATE_UNAVAILABLE,
-    TEMP_CELSIUS,
+    UnitOfTemperature,
 )
+from homeassistant.core import HomeAssistant
+
 from homeassistant.helpers import device_registry, entity_platform
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.typing import HomeAssistantType
 
 from .bht1000 import BHT1000, WEEKLY_MODE
 from .const import CONTROLLER, DOMAIN, SERVICE_SYNC_TIME
@@ -55,9 +54,9 @@ class Bht1000Device(ClimateEntity):
         self._attr_min_temp = 0
         self._attr_max_temp = 35
         self._attr_precision = 0.5
-        self._attr_temperature_unit = TEMP_CELSIUS
-        self._attr_hvac_modes = [HVAC_MODE_OFF, HVAC_MODE_HEAT, HVAC_MODE_AUTO]
-        self._attr_supported_features = SUPPORT_TARGET_TEMPERATURE
+        self._attr_temperature_unit = UnitOfTemperature.CELSIUS
+        self._attr_hvac_modes = [HVACMode.OFF, HVACMode.HEAT, HVACMode.AUTO]
+        self._attr_supported_features = ClimateEntityFeature.TARGET_TEMPERATURE
         self._attr_current_temperature = None
         self._attr_hvac_action = None
         self._attr_unique_id = self.name
@@ -67,9 +66,11 @@ class Bht1000Device(ClimateEntity):
             manufacturer="Beca Energy",
             model="BHT 1000",
             name=self.name,
-            connections={(device_registry.CONNECTION_NETWORK_MAC, self._mac_address)}
-            if mac_address is not None
-            else None,
+            connections=(
+                {(device_registry.CONNECTION_NETWORK_MAC, self._mac_address)}
+                if mac_address is not None
+                else None
+            ),
         )
 
     async def async_set_hvac_mode(self, hvac_mode: HVACMode) -> None:
@@ -79,14 +80,14 @@ class Bht1000Device(ClimateEntity):
         Args:
             hvac_mode: The HVAC mode to set.
         """
-        if hvac_mode == HVAC_MODE_HEAT:
+        if hvac_mode == HVACMode.HEAT:
             await self._controller.turn_on()
             await self._controller.set_manual_mode()
             return
-        if hvac_mode == HVAC_MODE_OFF:
+        if hvac_mode == HVACMode.OFF:
             await self._controller.turn_off()
             return
-        if hvac_mode == HVAC_MODE_AUTO:
+        if hvac_mode == HVACMode.AUTO:
             await self._controller.turn_on()
             await self._controller.set_weekly_mode()
 
@@ -111,32 +112,32 @@ class Bht1000Device(ClimateEntity):
         """Updates the state of the climate."""
         if await self._controller.read_status():
             if self._controller.power is False:
-                self._attr_hvac_mode = HVAC_MODE_OFF
+                self._attr_hvac_mode = HVACMode.OFF
             elif self._controller.mode == WEEKLY_MODE:
-                self._attr_hvac_mode = HVAC_MODE_AUTO
+                self._attr_hvac_mode = HVACMode.AUTO
             else:
-                self._attr_hvac_mode = HVAC_MODE_HEAT
+                self._attr_hvac_mode = HVACMode.HEAT
 
             self._attr_current_temperature = self._controller.current_temperature
             self._attr_target_temperature = self._controller.setpoint
 
             if self._controller.power is False:
-                self._attr_hvac_action = CURRENT_HVAC_OFF
+                self._attr_hvac_action = HVACAction.OFF
             elif (self._controller.setpoint is None) or (
                 self._controller.current_temperature is None
             ):
                 self._attr_hvac_action = None
             elif self._controller.idle is True:
-                self._attr_hvac_action = CURRENT_HVAC_IDLE
+                self._attr_hvac_action = HVACAction.IDLE
             else:
-                self._attr_hvac_action = CURRENT_HVAC_HEAT
+                self._attr_hvac_action = HVACAction.HEATING
         else:
             self._attr_hvac_mode = STATE_UNAVAILABLE
         return
 
 
 async def async_setup_entry(
-    hass: HomeAssistantType,
+    hass: HomeAssistant,
     config_entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ):

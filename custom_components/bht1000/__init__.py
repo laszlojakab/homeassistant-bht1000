@@ -1,14 +1,16 @@
 """BHT-1000 thermostat integration."""
+
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST
-from homeassistant.helpers.typing import ConfigType, HomeAssistantType
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.typing import ConfigType
 
 from .bht1000 import BHT1000
 from .const import CONTROLLER, DOMAIN, PORT
 
 
 # pylint: disable=unused-argument
-async def async_setup(hass: HomeAssistantType, config: ConfigType) -> bool:
+async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """
     Set up the BHT1000 component.
 
@@ -23,7 +25,7 @@ async def async_setup(hass: HomeAssistantType, config: ConfigType) -> bool:
     return True
 
 
-async def async_setup_entry(hass: HomeAssistantType, config_entry: ConfigEntry) -> bool:
+async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> bool:
     """
     Initialize the climates based on the config entry.
 
@@ -40,10 +42,13 @@ async def async_setup_entry(hass: HomeAssistantType, config_entry: ConfigEntry) 
         )
 
     hass.async_create_task(
-        hass.config_entries.async_forward_entry_setup(config_entry, "climate")
+        hass.config_entries.async_forward_entry_setups(
+            config_entry,
+            (
+                "climate",
+                "lock",
+            ),
+        )
     )
 
-    hass.async_create_task(
-        hass.config_entries.async_forward_entry_setup(config_entry, "lock")
-    )
     return True
